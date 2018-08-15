@@ -12,3 +12,4 @@ Api route : http://localhost:8080/api/v1/feed
 Header: Authorization a09b55ed-1b8c-4039-b7a3-69b429820fd3
 
 
+/Users/krish/Desktop/Screen Shot 2018-08-15 at 2.39.55 PM.png
