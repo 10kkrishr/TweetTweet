@@ -60,18 +60,12 @@ function getTweets(userId, callback) {
   });
 
   db.serialize(() => {
-    db.all(`select * from Tweets
-             where Username in (
-               Select Username from Followers where
-               Follower ='`+userId+`'
-               )
-             order by Timestamp desc
-             limit 100`, (err, rows) => {
+     db.all('SELECT * FROM Tweets WHERE Username IN (SELECT Username FROM Followers WHERE Follower = ?) ORDER BY timestamp DESC LIMIT 100', userId, (err, tweets) => {
       if (err) {
         console.error(err.message);
       }
 
-      callback(null, rows);
+      callback(null, tweets);
 
     });
   });
@@ -93,13 +87,11 @@ function getUsername(token, callback) {
   });
 
   db.serialize(() => {
-    db.all(`select * from Session
-             where SessionToken ='`+token+`'`, (err, rows) => {
+    db.get('SELECT Username FROM Session WHERE SessionToken = ?', token, (err, user) => {
       if (err) {
         console.error(err.message);
       }
-      console.log('user is ' +rows[0].Username);
-      callback(null, rows[0].Username);
+      callback(null, user.Username);
 
     });
   });
