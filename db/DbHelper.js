@@ -52,56 +52,57 @@ function insertData() {
 }
 
 function getTweets(userId, callback) {
-  let db = new sqlite3.Database('./TweetDB.db', sqlite3.OPEN_READWRITE, (err) => {
-  if (err) {
-    console.error(err.message);
-  }
-
-  });
-
-  db.serialize(() => {
-     db.all('SELECT * FROM Tweets WHERE Username IN (SELECT Username FROM Followers WHERE Follower = ?) ORDER BY timestamp DESC LIMIT 100', userId, (err, tweets) => {
+  return new Promise((resolve, reject) => {
+      let db = new sqlite3.Database('./TweetDB.db', sqlite3.OPEN_READWRITE, (err) => {
       if (err) {
-        console.error(err.message);
+        reject(err);
       }
-
-      callback(null, tweets);
-
+      db.serialize(() => {
+         db.all('SELECT * FROM Tweets WHERE Username IN (SELECT Username FROM Followers WHERE Follower = ?) ORDER BY timestamp DESC LIMIT 100', userId, (err, tweets) => {
+          if (err) {
+            reject(err);
+          }
+          resolve(tweets);
+        });
+      });
+      //Close database Connection
+      closeDatabaseConnection(db);
     });
   });
-  db.close((err) => {
+}
+
+function getUsername(token) {
+  return new Promise((resolve, reject) => {
+
+    let db = new sqlite3.Database('./TweetDB.db', sqlite3.OPEN_READWRITE, (err) => {
     if (err) {
       console.error(err.message);
     }
-    console.log('Close the database connection.');
+
+    });
+
+    db.serialize(() => {
+      db.get('SELECT Username FROM Session WHERE SessionToken = ?', token, (err, user) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(user.Username);
+
+      });
+    });
+    //Close database Connection
+    closeDatabaseConnection(db);
   });
 
 }
 
-function getUsername(token, callback) {
-  let db = new sqlite3.Database('./TweetDB.db', sqlite3.OPEN_READWRITE, (err) => {
-  if (err) {
-    console.error(err.message);
-  }
-
-  });
-
-  db.serialize(() => {
-    db.get('SELECT Username FROM Session WHERE SessionToken = ?', token, (err, user) => {
-      if (err) {
-        console.error(err.message);
-      }
-      callback(null, user.Username);
-
-    });
-  });
+function closeDatabaseConnection(db) {
   db.close((err) => {
     if (err) {
       console.error(err.message);
     }
     console.log('Close the database connection.');
   });
-
 }
 module.exports = {
   getUsername: getUsername,
