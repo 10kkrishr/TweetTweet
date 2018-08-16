@@ -5,13 +5,8 @@ const sqlite3 = require('sqlite3').verbose();
 const BbPromise = require('bluebird');
 
 //Insert test data
-function insertData() {
-  let db = new sqlite3.Database('./TweetDB.db', sqlite3.OPEN_READWRITE, (err) => {
-  if (err) {
-    console.error(err.message);
-  }
+function insertData(db) {
 
-  });
   db.serialize(() => {
     var userNumber = 10000;
     var i, j, k;
@@ -42,21 +37,13 @@ function insertData() {
       }
     }
   });
-  db.close((err) => {
-    if (err) {
-      console.error(err.message);
-    }
-    console.log('Close the database connection.');
-  });
+  //Close database Connection
+  closeDatabaseConnection(db);
 
 }
 
-function getTweets(userId, callback) {
+function getTweets(userId, db) {
   return new Promise((resolve, reject) => {
-      let db = new sqlite3.Database('./TweetDB.db', sqlite3.OPEN_READWRITE, (err) => {
-      if (err) {
-        reject(err);
-      }
       db.serialize(() => {
          db.all('SELECT * FROM Tweets WHERE Username IN (SELECT Username FROM Followers WHERE Follower = ?) ORDER BY timestamp DESC LIMIT 100', userId, (err, tweets) => {
           if (err) {
@@ -65,22 +52,12 @@ function getTweets(userId, callback) {
           resolve(tweets);
         });
       });
-      //Close database Connection
-      closeDatabaseConnection(db);
-    });
+
   });
 }
 
-function getUsername(token) {
+function getUsername(token, db) {
   return new Promise((resolve, reject) => {
-
-    let db = new sqlite3.Database('./TweetDB.db', sqlite3.OPEN_READWRITE, (err) => {
-    if (err) {
-      console.error(err.message);
-    }
-
-    });
-
     db.serialize(() => {
       db.get('SELECT Username FROM Session WHERE SessionToken = ?', token, (err, user) => {
         if (err) {
@@ -90,10 +67,18 @@ function getUsername(token) {
 
       });
     });
-    //Close database Connection
-    closeDatabaseConnection(db);
   });
 
+}
+
+function openDatabaseConnection() {
+  var db = new sqlite3.Database('./TweetDB.db', sqlite3.OPEN_READWRITE, (err) => {
+    if (err) {
+      console.error(err.message);
+    }
+
+  });
+  return db;
 }
 
 function closeDatabaseConnection(db) {
@@ -104,8 +89,11 @@ function closeDatabaseConnection(db) {
     console.log('Close the database connection.');
   });
 }
+
 module.exports = {
-  getUsername: getUsername,
+  closeDatabaseConnection : closeDatabaseConnection,
+  getUsername : getUsername,
   getTweets : getTweets,
-  insertData: insertData
+  insertData : insertData,
+  openDatabaseConnection : openDatabaseConnection
 };
